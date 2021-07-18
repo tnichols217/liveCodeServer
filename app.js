@@ -16,31 +16,50 @@ var dirToSignal = {}
 
 /*IO*/
 io.on('connection', (socket) => {
+	console.log("connection", socket.id)
 	socket.on("requestDocument", (dir) => {
-		if (addrs.hasOwnProperty(dir)) {
+		console.log("got request for doc", dir)
+		if (dirToSignal.hasOwnProperty(dir)) {
 			socket.emit("documentAddress", dirToSignal[dir])
+			console.log("sending doc", dirToSignal[dir])
 
 		} else {
 			socket.emit("documentAddress", undefined)
+			console.log("cannot find doc", dir)
 		}
 	})
 
 	socket.on("requestStartDocument", (dir) => {
-		if (!addrs.hasOwnProperty(dir)) {
+		console.log("got request for starting a new doc", dir)
+		if (!dirToSignal.hasOwnProperty(dir)) {
 			socket.emit("startDocument", true)
+			console.log("start doc true")
 			socket.emit("requestGenerateSignal")
-			socketToDIr[socket] = dir
+			console.log("requesting for signal")
+			socketToDir[socket] = dir
 			dirToSocket[dir] = socket
+			dirToSignal[dir] = undefined
 		} else {
 			socket.emit("startDocument", false)
+			console.log("start doc false")
 		}
 	})
 
 	socket.on("generatedSignal", (serverSignal) => {
+		console.log("got generated signal", serverSignal)
 		dirToSignal[socketToDir[socket]] = serverSignal
 	})
 
 	socket.on("joinDocument", (data) => {
-		 dirToSocket[data.dir].emit("newClient", data.clientSignal)
+		console.log("got req to join document")
+		dirToSocket[data.dir].emit("newClient", data.clientSignal)
+		dirToSocket[data.dir].emit("requestGenerateSignal")
+	})
+
+	socket.on("disconnect", () => {
+		console.log("disconnected", socket.id)
+		delete dirToSocket[socketToDir[socket]]
+		delete dirToSignal[socketToDir[socket]]
+		delete socketToDir[socket]
 	})
 });
