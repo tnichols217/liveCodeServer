@@ -51,6 +51,7 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on("joinDocument", (data) => {
+		dirToSignal[data.dir] = undefined
 		console.log("got req to join document")
 		dirToSocket[data.dir].emit("newClient", data.clientSignal)
 		dirToSocket[data.dir].emit("requestGenerateSignal")
